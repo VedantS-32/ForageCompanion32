@@ -2,9 +2,9 @@
     <div class="results-header">
         <h2>Mushroom Identification Results</h2>
     </div>
-    {% if image_path %}
+    {% if image_data %}
         <div class="uploaded-image-container">
-            <img src="{{ image_path }}" alt="Uploaded mushroom" class="uploaded-image">
+            <img src="{{ image_data }}" alt="Uploaded mushroom" class="uploaded-image">
         </div>
     {% endif %}
     <div class="species-info">
