@@ -1,8 +1,9 @@
-document
-  .getElementById("mushroom_image")!
-  .addEventListener("change", function (e: Event) {
+const mushroomInput = document.getElementById("mushroom_image");
+const filePreview = document.getElementById("file-preview");
+
+if (mushroomInput && filePreview) {
+  mushroomInput.addEventListener("change", function (e: Event) {
     const input = e.target as HTMLInputElement;
-    const filePreview = document.getElementById("file-preview") as HTMLElement;
     filePreview.innerHTML = "";
 
     if (input.files && input.files[0]) {
@@ -25,3 +26,4 @@ document
       reader.readAsDataURL(file);
     }
   });
+}

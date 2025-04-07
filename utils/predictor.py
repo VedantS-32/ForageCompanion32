@@ -1,19 +1,22 @@
 import os
 import json
 import numpy as np
-from io import BytesIO
 from PIL import Image
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.efficientnet import preprocess_input
+
+from utils.logger import logger
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "mushroom_classifierV2.keras")
 METADATA_PATH = os.path.join(BASE_DIR, "models", "metadata.txt")
 DATA_PATH = os.path.join(BASE_DIR, "data.json")
 
+logger.info("Loading model from %s", MODEL_PATH)
 MODEL = load_model(MODEL_PATH)
 
+logger.info("Loading class metadata from %s", METADATA_PATH)
 with open(METADATA_PATH, "r") as file:
     CLASS_NAMES = [line.strip() for line in file]
 
@@ -21,9 +24,10 @@ with open(METADATA_PATH, "r") as file:
 def load_mushroom_data():
     try:
         with open(DATA_PATH, "r") as file:
+            logger.info("Mushroom data loaded successfully from %s", DATA_PATH)
             return json.load(file)
     except Exception as e:
-        print(f"Error loading mushroom data from JSON: {e}")
+        logger.error("Error loading mushroom data from JSON: %s", e)
         return {}
 
 
@@ -31,6 +35,8 @@ MUSHROOM_DATA = load_mushroom_data()
 
 
 def predict_mushroom_from_stream(image_stream):
+    logger.info("Starting prediction from image stream")
+
     img = Image.open(image_stream).convert("RGB")
     img = img.resize((299, 299))
 
@@ -38,6 +44,7 @@ def predict_mushroom_from_stream(image_stream):
     img_array = np.expand_dims(img_array, axis=0)
     img_array = preprocess_input(img_array)
 
+    logger.debug("Running model prediction")
     preds = MODEL.predict(img_array)
     top_indices = np.argsort(preds[0])[-5:][::-1]
     top_predictions = []
@@ -45,6 +52,8 @@ def predict_mushroom_from_stream(image_stream):
     for i in top_indices:
         class_name = CLASS_NAMES[i]
         confidence = float(preds[0][i]) * 100
+
+        logger.debug("Prediction: %s (%.2f%%)", class_name, confidence)
 
         mushroom_info = next(
             (
@@ -60,7 +69,7 @@ def predict_mushroom_from_stream(image_stream):
         )
 
         if not mushroom_info:
-            print("Not Found")
+            logger.warning("Metadata not found for class: %s", class_name)
             mushroom_info = {}
 
         info = {
@@ -77,4 +86,5 @@ def predict_mushroom_from_stream(image_stream):
             {"class_name": class_name, "confidence": confidence, "info": info}
         )
 
+    logger.info("Prediction completed with %d results", len(top_predictions))
     return top_predictions
